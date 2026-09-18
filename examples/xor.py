@@ -1,11 +1,11 @@
 import random
-
+import matplotlib.pyplot as plt
 from neuroforge.mlp import MLP
 from neuroforge.optim import SGD
 from neuroforge.tensor import Tensor
 from neuroforge.training import train
 from neuroforge.loss import MSELoss
-
+from pathlib import Path
 
 random.seed(42)
 
@@ -52,3 +52,11 @@ for inputs, target in dataset:
         f"Target: {target.data:.0f} "
         f"Prediction: {prediction.data:.4f}"
     )
+Path("results").mkdir(exist_ok=True)
+
+plt.plot(history)
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.title("NeuroForge XOR Training Loss")
+plt.savefig("results/xor_loss.png")
+plt.show()
