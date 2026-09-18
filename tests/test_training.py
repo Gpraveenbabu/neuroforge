@@ -41,3 +41,27 @@ def test_batch_training_improves_prediction():
     assert abs(prediction_after - 2.0) < abs(
         prediction_before - 2.0
     )
+def test_training_default_loss_single_batch():
+    model = MLP(1, [1], activation="leaky_relu")
+
+    neuron = model.layers[0].neurons[0]
+    neuron.weights[0].data = 1.0
+    neuron.bias.data = 0.0
+
+    optimizer = SGD(
+        model.parameters(),
+        learning_rate=0.01
+    )
+
+    dataset = [
+        (Tensor(1.0), Tensor(2.0)),
+    ]
+
+    history = train(
+        model,
+        dataset,
+        optimizer,
+        epochs=2
+    )
+
+    assert len(history) == 2

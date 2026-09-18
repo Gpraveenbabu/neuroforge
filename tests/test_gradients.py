@@ -273,3 +273,13 @@ def test_mse_loss_batch():
     assert loss.data == 1.0
     assert prediction_1.grad == 1.0
     assert prediction_2.grad == 1.0
+def test_unsupported_activation():
+    from neuroforge.neuron import Neuron
+
+    neuron = Neuron(2, activation="invalid")
+
+    try:
+        neuron([1.0, 2.0])
+        assert False
+    except ValueError as error:
+        assert "Unsupported activation" in str(error)
