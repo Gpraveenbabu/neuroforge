@@ -65,3 +65,34 @@ def test_training_default_loss_single_batch():
     )
 
     assert len(history) == 2
+def test_vector_input_training():
+    model = MLP(
+        2,
+        [4, 1],
+        activation="leaky_relu"
+    )
+
+    optimizer = SGD(
+        model.parameters(),
+        learning_rate=0.05
+    )
+
+    dataset = [
+        ([Tensor(0.0), Tensor(0.0)], Tensor(0.0)),
+        ([Tensor(0.0), Tensor(1.0)], Tensor(1.0)),
+        ([Tensor(1.0), Tensor(0.0)], Tensor(1.0)),
+        ([Tensor(1.0), Tensor(1.0)], Tensor(0.0)),
+    ]
+
+    history = train(
+        model,
+        dataset,
+        optimizer,
+        epochs=10,
+        loss_fn=MSELoss(),
+        batch_size=4,
+        verbose=False
+    )
+
+    assert len(history) == 10
+    assert all(loss >= 0 for loss in history)
