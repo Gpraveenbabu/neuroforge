@@ -27,7 +27,10 @@ def train(
             targets = []
 
             for x, target in batch:
-                predictions.append(model([x])[0])
+                if isinstance(x, list):
+                    predictions.append(model(x)[0])
+                else:
+                    predictions.append(model([x])[0])
                 targets.append(target)
 
             if len(batch) == 1:
