@@ -1,7 +1,7 @@
 import time
 import random
 import statistics
-
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -10,17 +10,16 @@ from neuroforge.optim import SGD
 from neuroforge.tensor import Tensor
 from neuroforge.training import train
 from neuroforge.loss import MSELoss
-
+random.seed(42)
+np.random.seed(42)
+torch.manual_seed(42)
 
 DATA = [
-    (1.0, 2.0),
-    (2.0, 4.0),
-    (3.0, 6.0),
-    (4.0, 8.0),
-    (5.0, 10.0),
+    (x / 10.0, 2.0 * (x / 10.0))
+    for x in range(1, 101)
 ]
 
-EPOCHS = 100
+EPOCHS = 50
 REPETITIONS = 10
 
 
@@ -31,11 +30,10 @@ def benchmark_neuroforge():
     for _ in range(REPETITIONS):
         random.seed(42)
 
-        model = MLP(1, [1], activation="leaky_relu")
-
+        model = MLP(1, [8, 1], activation="leaky_relu")
         optimizer = SGD(
             model.parameters(),
-            learning_rate=0.01
+            learning_rate=0.001
         )
 
         dataset = [
@@ -51,7 +49,7 @@ def benchmark_neuroforge():
             optimizer,
             epochs=EPOCHS,
             loss_fn=MSELoss(),
-            batch_size=5,
+            batch_size=len(dataset),
             verbose=False
         )
 
@@ -71,13 +69,15 @@ def benchmark_pytorch():
         torch.manual_seed(42)
 
         model = nn.Sequential(
-            nn.Linear(1, 1),
+            nn.Linear(1, 8),
+            nn.LeakyReLU(),
+            nn.Linear(8, 1),
             nn.LeakyReLU()
         )
 
         optimizer = torch.optim.SGD(
             model.parameters(),
-            lr=0.01
+            lr=0.001
         )
 
         loss_fn = nn.MSELoss()
@@ -126,7 +126,12 @@ print(
     f"PyTorch average:    "
     f"{statistics.mean(pytorch_times):.6f} seconds"
 )
+neuroforge_avg = statistics.mean(neuroforge_times)
+pytorch_avg = statistics.mean(pytorch_times)
 
+speedup = neuroforge_avg / pytorch_avg
+
+print(f"NeuroForge is {speedup:.1f}x slower than PyTorch")
 print(
     f"\nNeuroForge final loss: "
     f"{statistics.mean(neuroforge_losses):.6f}"
