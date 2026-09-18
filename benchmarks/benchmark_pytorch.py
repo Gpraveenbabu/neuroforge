@@ -1,5 +1,7 @@
 import time
 import random
+import statistics
+
 import torch
 import torch.nn as nn
 
@@ -10,8 +12,7 @@ from neuroforge.training import train
 from neuroforge.loss import MSELoss
 
 
-# Dataset
-data = [
+DATA = [
     (1.0, 2.0),
     (2.0, 4.0),
     (3.0, 6.0),
@@ -19,111 +20,118 @@ data = [
     (5.0, 10.0),
 ]
 
-epochs = 100
+EPOCHS = 100
+REPETITIONS = 10
 
 
-# -------------------------
-# NeuroForge benchmark
-# -------------------------
+def benchmark_neuroforge():
+    times = []
+    final_losses = []
 
-random.seed(42)
+    for _ in range(REPETITIONS):
+        random.seed(42)
 
-model = MLP(1, [1], activation="leaky_relu")
+        model = MLP(1, [1], activation="leaky_relu")
 
-optimizer = SGD(
-    model.parameters(),
-    learning_rate=0.01
+        optimizer = SGD(
+            model.parameters(),
+            learning_rate=0.01
+        )
+
+        dataset = [
+            (Tensor(x), Tensor(y))
+            for x, y in DATA
+        ]
+
+        start = time.perf_counter()
+
+        history = train(
+            model,
+            dataset,
+            optimizer,
+            epochs=EPOCHS,
+            loss_fn=MSELoss(),
+            batch_size=5
+        )
+
+        elapsed = time.perf_counter() - start
+
+        times.append(elapsed)
+        final_losses.append(history[-1])
+
+    return times, final_losses
+
+
+def benchmark_pytorch():
+    times = []
+    final_losses = []
+
+    for _ in range(REPETITIONS):
+        torch.manual_seed(42)
+
+        model = nn.Sequential(
+            nn.Linear(1, 1),
+            nn.LeakyReLU()
+        )
+
+        optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=0.01
+        )
+
+        loss_fn = nn.MSELoss()
+
+        x_train = torch.tensor(
+            [[x] for x, _ in DATA],
+            dtype=torch.float32
+        )
+
+        y_train = torch.tensor(
+            [[y] for _, y in DATA],
+            dtype=torch.float32
+        )
+
+        start = time.perf_counter()
+
+        for _ in range(EPOCHS):
+            optimizer.zero_grad()
+
+            predictions = model(x_train)
+            loss = loss_fn(predictions, y_train)
+
+            loss.backward()
+            optimizer.step()
+
+        elapsed = time.perf_counter() - start
+
+        times.append(elapsed)
+        final_losses.append(loss.item())
+
+    return times, final_losses
+
+
+neuroforge_times, neuroforge_losses = benchmark_neuroforge()
+pytorch_times, pytorch_losses = benchmark_pytorch()
+
+print("\nBenchmark Results")
+print("=================")
+
+print(
+    f"NeuroForge average: "
+    f"{statistics.mean(neuroforge_times):.6f} seconds"
 )
 
-dataset = [
-    (Tensor(x), Tensor(y))
-    for x, y in data
-]
-
-start = time.perf_counter()
-
-history = train(
-    model,
-    dataset,
-    optimizer,
-    epochs=epochs,
-    loss_fn=MSELoss(),
-    batch_size=5
+print(
+    f"PyTorch average:    "
+    f"{statistics.mean(pytorch_times):.6f} seconds"
 )
 
-neuroforge_time = time.perf_counter() - start
-
-print("NeuroForge")
-print(f"Initial loss: {history[0]:.6f}")
-print(f"Final loss: {history[-1]:.6f}")
-print(f"Training time: {neuroforge_time:.6f} seconds")
-
-
-# -------------------------
-# PyTorch benchmark
-# -------------------------
-
-torch.manual_seed(42)
-
-torch_model = nn.Sequential(
-    nn.Linear(1, 1),
-    nn.LeakyReLU()
+print(
+    f"\nNeuroForge final loss: "
+    f"{statistics.mean(neuroforge_losses):.6f}"
 )
 
-torch_optimizer = torch.optim.SGD(
-    torch_model.parameters(),
-    lr=0.01
+print(
+    f"PyTorch final loss:    "
+    f"{statistics.mean(pytorch_losses):.6f}"
 )
-
-loss_fn = nn.MSELoss()
-
-x_train = torch.tensor(
-    [[x] for x, _ in data],
-    dtype=torch.float32
-)
-
-y_train = torch.tensor(
-    [[y] for _, y in data],
-    dtype=torch.float32
-)
-
-start = time.perf_counter()
-
-torch_model.train()
-
-with torch.no_grad():
-    initial_loss = loss_fn(
-        torch_model(x_train),
-        y_train
-    ).item()
-
-for _ in range(epochs):
-    torch_optimizer.zero_grad()
-
-    predictions = torch_model(x_train)
-    loss = loss_fn(predictions, y_train)
-
-    loss.backward()
-    torch_optimizer.step()
-
-with torch.no_grad():
-    final_loss = loss_fn(
-        torch_model(x_train),
-        y_train
-    ).item()
-
-pytorch_time = time.perf_counter() - start
-
-print("\nPyTorch")
-print(f"Initial loss: {initial_loss:.6f}")
-print(f"Final loss: {final_loss:.6f}")
-print(f"Training time: {pytorch_time:.6f} seconds")
-
-
-# -------------------------
-# Comparison
-# -------------------------
-
-print("\nComparison")
-print(f"NeuroForge: {neuroforge_time:.6f} seconds")
-print(f"PyTorch:    {pytorch_time:.6f} seconds")
