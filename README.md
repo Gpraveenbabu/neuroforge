@@ -40,3 +40,32 @@ scalar operations, while PyTorch uses optimized tensor operations.
 
 These results are intended as an educational performance comparison,
 not a production-level benchmark.
+
+## XOR Classification Example
+
+NeuroForge can learn the nonlinear XOR problem using a
+multi-layer perceptron (MLP).
+
+### Architecture
+
+- Input layer: 2 neurons
+- Hidden layer: 4 neurons
+- Output layer: 1 neuron
+- Activation: LeakyReLU
+- Optimizer: SGD
+
+### Results
+
+| Input | Target | Prediction |
+|-------|--------|------------|
+| [0, 0] | 0 | 0.0000 |
+| [0, 1] | 1 | 1.0000 |
+| [1, 0] | 1 | 1.0000 |
+| [1, 1] | 0 | 0.0000 |
+
+The model successfully learned the XOR relationship.
+
+Run the example:
+
+```bash
+PYTHONPATH=. python examples/xor.py
