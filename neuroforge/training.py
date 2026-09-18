@@ -7,7 +7,8 @@ def train(
     optimizer,
     epochs,
     loss_fn=None,
-    batch_size=1
+    batch_size=1,
+    verbose=True
 ):
     if loss_fn is None:
         loss_fn = MSELoss()
@@ -49,7 +50,7 @@ def train(
 
         history.append(average_loss)
 
-        if epoch % 10 == 0:
+        if verbose and epoch % 10 == 0:
             print(
                 f"Epoch {epoch}: "
                 f"loss={average_loss:.6f}"

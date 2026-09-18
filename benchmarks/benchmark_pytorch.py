@@ -51,7 +51,8 @@ def benchmark_neuroforge():
             optimizer,
             epochs=EPOCHS,
             loss_fn=MSELoss(),
-            batch_size=5
+            batch_size=5,
+            verbose=False
         )
 
         elapsed = time.perf_counter() - start
